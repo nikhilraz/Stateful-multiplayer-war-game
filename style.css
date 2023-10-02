@@ -1,0 +1,145 @@
+body {
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+}
+
+.game-start-popup {
+    width: 300px; /* Adjust width as needed */
+    color: whitesmoke;
+    background-color: rgb(51, 154, 121);
+    border-radius: 20px;
+    border: 2px solid rgb(3, 19, 14);
+    text-align: center;
+    padding: 5px;
+    position: absolute;
+    top: 0;
+    transform: translate(-50%, 0); /* Center horizontally */
+    left: 50%;
+    animation: floatUpDown 2s ease-in-out;
+}
+@keyframes floatUpDown {
+    0%, 100% {
+        padding: 5px;
+        transform: translateX(-50%) translateY(0);
+    }
+    25% {
+        padding: 10px;
+    }
+    50% {
+        padding: 20px;
+        transform: translateX(-50%) translateY(10vh); /* Float down */
+    }
+}
+
+
+.game-container{
+    padding: 40px;
+    top: 12vh;
+    left: 50%;
+    transform: translate(-50%, 0);
+    position: absolute;
+    text-align: center; /* Center the inline-level children horizontally */
+    display: flex;
+    flex-direction: column; /* Stack the elements vertically */
+    align-items: center; /* Center the elements vertically */
+    justify-content: center; /* Center the elements horizontally */
+    height: 100vh; /* Adjust the container height as needed */
+}
+.game-container > * {
+    margin-top: 10px;
+}
+
+.game-container .timer {
+    margin: auto; /*center both horizonatally and vertically*/
+    padding: 20px;
+    background-color: rgb(51, 154, 121);
+    color: aliceblue;
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    text-align: center;
+
+    display: flex;
+    flex-direction: column; /* Stack the elements vertically */
+    align-items: center; /* Center the elements vertically */
+    justify-content: center; /* Center the elements horizontally */
+}
+
+
+#gamersJoined{
+    top: 50%;
+    transform:translateY(-50%);
+    position: absolute;
+    right: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+
+    border: 2px solid rgb(41, 14, 14);
+}
+.startGameClass{
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    top: 9vh;
+}
+#showResults{
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    top: 6vh;
+    color: whitesmoke;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+#showResults > * {
+    margin: auto;
+    padding: 5px;
+}
+
+
+#createGame, #joinGame, #startGame, #refreshBtn {
+    padding: 10px;
+    border: 1px solid rgb(5, 30, 5);
+    background-color: rgb(2, 32, 22);
+    color: rgb(254, 254, 254);
+    border-radius: 10px;
+
+}
+
+table {
+    border-collapse: collapse;
+    color: whitesmoke;
+    
+}
+.stripped-class th{
+    padding: 5px;
+    text-align: center;
+    background-color: rgb(51, 154, 121);
+}
+.stripped-class td{
+    padding: 5px;
+    text-align: center;
+    background-color: rgb(109, 114, 113);
+}
+.stripped-class tbody tr:nth-child(odd){
+    background-color: rgb(105, 199, 151);
+
+}
+
+
+
+@keyframes floatUpDown {
+    0%, 100% {
+        transform: translateX(-50%) translateY(0);
+    }
+    50% {
+        transform: translateX(-50%) translateY(10vh); /* Float down */
+    }
+}

@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NRA GAME</title>
+    <link rel="stylesheet" type="text/css" href="style.css">
+</head>
+<body>
+    <div class="game-start-popup">NRA GAME</div>
+    <div class="game-container">
+        <div><button id="createGame">Create game</button></div>
+        <div><h3 id="gameIdMsg" style="display: none;"></h3></div> 
+        <div id = "joinMsgAndButtonSpan">Enter game id to join <input type="text" id="gameidInput" ></div>
+        <div> <button id="joinGame">Join game</button></div>
+        <div id="board"></div>
+        <div class="timer" style="display: none;"></div>
+    </div>
+    <div id="gamersJoined"></div>
+    <div class = "startGameClass"> <button id="startGame">Start game</button></div>
+    <div id="showResults" style="display: none;"></div>
+    <script src="script.js"></script>
+    <script>
+        let currentCon = null;
+        let gameId = null;
+        let currColor = null;
+        const gameidInput = document.getElementById('gameidInput');
+        const createGameBtn = document.getElementById('createGame');
+        const joinGameBtn = document.getElementById('joinGame');
+        const startGameBtn = document.getElementById('startGame');
+        const displayGamer = document.getElementById('gamersJoined');
+        const board = document.getElementById('board');
+        const timer = document.getElementsByClassName('timer')[0];
+        const gameIdMsg = document.getElementById('gameIdMsg');
+        const joinMsgAndButtonSpan = document.getElementById('joinMsgAndButtonSpan');
+        const showResults = document.getElementById('showResults');
+        const gameContainer = document.getElementsByClassName('game-container')[0];
+     
+        const socket = new WebSocket("ws://localhost:8081");
+        socket.onopen = ()=>{
+            console.log("Connected with Websocket!");
+        };
+
+        socket.onmessage = (msg)=>{
+            const res = JSON.parse(msg.data);
+            //connect
+
+            if(gameId == null || typeof gameId == 'undefined'){
+              gameId = gameidInput.value;
+            }
+
+            if(res.method == "connect"){
+                currentCon = res.clientId;
+                console.log(`Got connection id: ${currentCon}`);
+            }
+            if(res.method == 'create'){
+                gameId = res.gameId;
+                createGameBtn.style.display = 'none';
+                gameIdMsg.style.display = "block";
+                gameIdMsg.textContent = `NRA game has been created by ${res.clientId}. Enter ID: ${gameId} below and join the game! `;
+                gameIdMsg.style.color = "brown";
+                console.log(`Game created! Id: ${gameId}`);
+            }
+
+            if(res.method == 'join'){
+                const game = res.game;
+                gameId = game.id;
+
+                while(displayGamer.firstChild){
+                    displayGamer.removeChild(displayGamer.firstChild);
+                }
+                game.clients.forEach((gamer)=>{
+                    const gamerDiv = document.createElement('div');
+                    gamerDiv.style.backgroundColor = gamer.color;
+                    gamerDiv.style.height = "30px";
+                    gamerDiv.style.width = "200px";
+                    gamerDiv.style.padding = "10px";
+                    gamerDiv.textContent = gamer.clientId;
+                    displayGamer.appendChild(gamerDiv);
+                    if(gamer.clientId == currentCon){
+                        currColor = gamer.color;
+                    }
+                });
+
+                while(board.firstChild){
+                    board.removeChild(board.firstChild);
+                }
+                for( let i =0; i< game.balls; i++){
+                    const cell = document.createElement('button');
+                    cell.tag = i+1;
+                    cell.id = "cell"+(i+1);
+                    cell.textContent = i+1;
+                    cell.style.width = "100px";
+                    cell.style.height = "100px";
+                    cell.addEventListener('click', e=>{
+                        cell.style.backgroundColor = currColor;
+                        const payload = {
+                            method: 'play',
+                            clientId: currentCon,
+                            gameId: gameId,
+                            ballNo: cell.tag,
+                            color: currColor
+                        };
+                        socket.send(JSON.stringify(payload));
+                    });
+                    board.appendChild(cell);
+                }
+                joinMsgAndButtonSpan.style.display = 'none';
+                gameIdMsg.style.display = 'none';
+                joinGameBtn.style.display = 'none';
+                createGameBtn.style.display = 'none';
+
+
+               
+                if(game.clients.length == 3){
+                    startGameBtn.style.display = 'block';
+                    joinGameBtn.style.display = 'none';
+                }
+
+            }
+
+            if(res.method == 'play'){
+                const game = res.game;
+                for(var key in game.state){
+                    const color = game.state[key];
+                    const ballNo = key;
+                    let cell = document.getElementById('cell'+ballNo);
+                    cell.style.backgroundColor = color;
+                }
+            }
+
+            if(res.method == 'start'){
+                const game = res.game;
+                const duration = game.duration;
+                let sec = Math.round(duration/1000);
+                startGameBtn.style.display = 'none';  
+                timer.style.display = "block"
+                const timerStrong = document.createElement('strong');
+                timerStrong.textContent = sec;
+                timer.appendChild(timerStrong);
+
+                const intervalId = setInterval(()=>{
+                    sec--;
+                    timerStrong.textContent = sec;
+                    if(sec == 0){
+                        clearInterval(intervalId);
+                    }
+                }, 1000);
+
+            }
+
+            if(res.method == 'showResult'){
+                gameContainer.style.top = "30vh";
+                const gamerToResultMap = res.gamerToResultMap;
+                const winner = res.winner;
+                showResults.style.display= 'block';
+                // Create a table element
+                const table = document.createElement('table');
+                table.classList.add('stripped-class'); 
+                const thead = document.createElement('thead');
+                const tbody = document.createElement('thead');
+                const thr = document.createElement('tr');
+                const th1 = document.createElement('th');
+                th1.textContent = "GAMER_ID";
+                const th2 = document.createElement('th');
+                th2.textContent = "COLOR";
+                const th3 = document.createElement('th');
+                th3.textContent = "SCORE";
+                thr.appendChild(th1);
+                thr.appendChild(th2);
+                thr.appendChild(th3);
+                thead.appendChild(thr);
+                for(var key in gamerToResultMap){
+                    let gamerId = key;
+                    let color = gamerToResultMap[key].color;
+                    let score = gamerToResultMap[key].score;
+                    
+                    let tbr = document.createElement('tr');
+                    let tbd1 = document.createElement('td');
+                    tbd1.textContent = gamerId;
+                    let tbd2 = document.createElement('td');
+                    tbd2.textContent = color;
+                    let tbd3 = document.createElement('td');
+                    tbd3.textContent = score;
+
+                    tbr.appendChild(tbd1);
+                    tbr.appendChild(tbd2);
+                    tbr.appendChild(tbd3);
+                    tbody.appendChild(tbr);
+                }
+                table.appendChild(thead);
+                table.appendChild(tbody);
+                showResults.appendChild(table);
+
+                const winnerDiv = document.createElement('div');
+                winnerDiv.style.color = winner.color;
+                winnerDiv.style.padding = "5px";
+                winnerDiv.style.width = "20px";
+                winnerDiv.style.height = "20px";
+                const winnerH2 = document.createElement('h2');
+                winnerH2.style.color = winner.color;
+                winnerH2.textContent = `Times up! \n  ${winner.clientId} won!`;
+                const span = document.createElement('span');
+                span.appendChild(winnerDiv);
+                span.appendChild(winnerH2);
+
+                showResults.appendChild(span);
+
+                const refreshDiv = document.createElement('div');
+                const refreshBtn = document.createElement('button');
+                refreshBtn.textContent = "Refresh";
+                refreshBtn.setAttribute('id', 'refreshBtn');
+                refreshBtn.addEventListener('click', e=>{
+                    window.location.reload();
+                });
+                refreshDiv.appendChild(refreshBtn);
+
+                showResults.appendChild(refreshDiv);
+
+
+            }
+
+            
+        };
+
+        socket.onclose = ()=>{
+            console.log("Closed Websocket!");
+        };
+
+        startGameBtn.style.display = 'none';
+        startGameBtn.addEventListener('click', e=>{
+            const payLoad = {
+                method: 'start',
+                gameId: gameId
+            };
+            socket.send(JSON.stringify(payLoad));
+        });
+ 
+        createGameBtn.addEventListener('click', e=>{
+            const payLoad = {
+                method: 'create',
+                clientId: currentCon
+            };
+            socket.send(JSON.stringify(payLoad));
+        });
+
+
+        joinGameBtn.addEventListener('click',e=>{
+            gameId = gameidInput.value;
+            const payload = {
+                method: 'join',
+                gameId: gameId,
+                clientId: currentCon
+            };
+            socket.send(JSON.stringify(payload));
+        });
+
+       
+
+    </script>
+</body>
+</html>
